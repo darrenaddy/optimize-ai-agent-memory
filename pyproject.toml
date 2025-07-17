@@ -1,0 +1,28 @@
+
+[tool.poetry]
+name = "optimize-ai-agent-memory"
+version = "0.1.0"
+description = "A project demonstrating various memory optimization strategies for AI agents, rewritten with software engineering best practices."
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+langchain = "^0.1.0"
+openai = "^1.0.0"
+spacy = "^3.7.2"
+numpy = "^1.26.2"
+python-dotenv = "^1.0.0"
+transformers = "^4.36.2"
+torch = "^2.1.2"
+scikit-learn = "^1.3.2"
+networkx = "^3.2.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.3"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
