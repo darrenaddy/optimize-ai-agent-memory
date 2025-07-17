@@ -1,6 +1,7 @@
 # Optimize AI Agent Memory - Best Practices Edition
 
 This project is a complete rewrite of the original `optimize-ai-agent-memory` repository, with a focus on professional software engineering best practices. It transforms the original collection of scripts into a modular, extensible, and testable Python library.
+Many thanks to @FareedKahn-dev for his very good explanation of Medium article: [Implementing 9 Techniques to Optimize AI Agent Memory](https://medium.com/gitconnected/implementing-9-techniques-to-optimize-ai-agent-memory-67d813e3d796)
 
 ## Core Improvements
 
