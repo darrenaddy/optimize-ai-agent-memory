@@ -1,23 +1,19 @@
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 from .base import BaseMemory
-from langchain_openai import ChatOpenAI
-from ..config import OPENAI_API_KEY
+
+if TYPE_CHECKING:
+    from agent_memory.llms.base import BaseLLM
 
 class SummarizationMemory(BaseMemory):
     """
     A memory strategy that summarizes the conversation history to keep the context concise.
     """
 
-    def __init__(self, summary_prompt: str = "Summarize the following conversation:"):
-        """
-        Initializes the SummarizationMemory.
-
-        Args:
-            summary_prompt: The prompt to use for summarization.
-        """
+    def __init__(self, llm: "BaseLLM", summary_prompt: str = "Summarize the following conversation:"):
+        super().__init__(llm=llm)
         self.history: List[Dict[str, str]] = []
         self.summary_prompt = summary_prompt
-        self.llm = ChatOpenAI(api_key=OPENAI_API_KEY)
+        self.llm = llm
 
     def add_message(self, role: str, content: str) -> None:
         """Adds a message to the memory."""

@@ -26,7 +26,15 @@ Many thanks to @FareedKahn-dev for his very good explanation of 9 beginner-to-ad
 
 3. **Set up your environment:**
    - Rename `.env.example` to `.env`.
-   - Add your OpenAI API key to the `.env` file. You can obtain your API key from [OpenAI platform website](https://platform.openai.com/account/api-keys).
+   - **Configure your LLM:**
+     - For OpenAI, add your OpenAI API key to the `.env` file: `OPENAI_API_KEY="your_openai_api_key_here"`. You can obtain your API key from [OpenAI platform website](https://platform.openai.com/account/api-keys).
+     - For Ollama, ensure Ollama is running and the desired model is downloaded. Then, set the following in your `.env` file:
+       ```
+       LLM_PROVIDER="ollama"
+       OLLAMA_MODEL="llama2" # e.g., llama2, mistral, phi3
+       OLLAMA_BASE_URL="http://localhost:11434"
+       ```
+     - To use OpenAI, set `LLM_PROVIDER="openai"`.
 
 ## Usage
 
@@ -36,7 +44,9 @@ To see the different memory strategies in action, run the `example.py` script:
 poetry run python example.py
 ```
 
-**Note:** Some memory strategies (Summarization, Retrieval, Hierarchical, Compression & Consolidation) require an active OpenAI API key to function correctly. If `OPENAI_API_KEY` is not set, these examples will print a warning and may not produce meaningful output.
+The agent will use the LLM configured in your `.env` file.
+
+**Note:** Some memory strategies (Summarization, Retrieval, Hierarchical, Compression & Consolidation) require an active LLM connection to function correctly. If the LLM is not properly configured or accessible, these examples may not produce meaningful output.
 
 ### Memory Strategies Implemented:
 

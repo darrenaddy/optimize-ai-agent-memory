@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from .base import BaseMemory
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -30,19 +30,15 @@ class RetrievalMemory(BaseMemory):
         if texts:
             self.vector_store = FAISS.from_texts(texts, self.embeddings)
 
-    def get_context(self, query: str, k: int = 2) -> str:
+    def get_context(self, query: Optional[str] = None, k: int = 2) -> str:
         """Retrieves the most relevant context for a given query."""
-        if not self.vector_store:
-            return ""
-        docs = self.vector_store.similarity_search(query, k=k)
-        return "\n".join([doc.page_content for doc in docs])
+        if query and self.vector_store:
+            docs = self.vector_store.similarity_search(query, k=k)
+            return "\n".join([doc.page_content for doc in docs])
+        else:
+            return "\n".join([f"{msg['role']}: {msg['content']}" for msg in self.history])
 
     def clear(self) -> None:
         """Clears the memory."""
         self.history = []
         self.vector_store = None
-
-    def get_context(self) -> str:
-        # This method is required by the base class, but for retrieval memory,
-        # we need a query. We'll return the full history for now.
-        return "\n".join([f"{msg['role']}: {msg['content']}" for msg in self.history])

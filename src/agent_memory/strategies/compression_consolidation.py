@@ -1,7 +1,8 @@
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 from .base import BaseMemory
-from langchain_openai import ChatOpenAI
-from ..config import OPENAI_API_KEY
+
+if TYPE_CHECKING:
+    from agent_memory.llms.base import BaseLLM
 
 class CompressionConsolidationMemory(BaseMemory):
     """
@@ -9,19 +10,13 @@ class CompressionConsolidationMemory(BaseMemory):
     This implementation uses summarization for compression.
     """
 
-    def __init__(self, compression_threshold: int = 5, compression_prompt: str = "Summarize the following conversation, focusing on key information and removing redundancy:"):
-        """
-        Initializes the CompressionConsolidationMemory.
-
-        Args:
-            compression_threshold: The number of messages after which compression is attempted.
-            compression_prompt: The prompt to use for compression/summarization.
-        """
+    def __init__(self, llm: "BaseLLM", compression_threshold: int = 5, compression_prompt: str = "Summarize the following conversation, focusing on key information and removing redundancy:"):
+        super().__init__(llm=llm)
         self.history: List[Dict[str, str]] = []
         self.compressed_memory: List[str] = []
         self.compression_threshold = compression_threshold
         self.compression_prompt = compression_prompt
-        self.llm = ChatOpenAI(api_key=OPENAI_API_KEY)
+        self.llm = llm
 
     def add_message(self, role: str, content: str) -> None:
         """Adds a message to the history and triggers compression if the threshold is met."""

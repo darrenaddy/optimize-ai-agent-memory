@@ -1,7 +1,8 @@
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 from .base import BaseMemory
-from langchain_openai import ChatOpenAI
-from ..config import OPENAI_API_KEY
+
+if TYPE_CHECKING:
+    from agent_memory.llms.base import BaseLLM
 
 class HierarchicalMemory(BaseMemory):
     """
@@ -9,19 +10,13 @@ class HierarchicalMemory(BaseMemory):
     and a long-term (summaries of older conversations).
     """
 
-    def __init__(self, short_term_threshold: int = 4, summary_prompt: str = "Summarize the following conversation:"):
-        """
-        Initializes the HierarchicalMemory.
-
-        Args:
-            short_term_threshold: The number of recent messages to keep in short-term memory.
-            summary_prompt: The prompt to use for summarization.
-        """
+    def __init__(self, llm: "BaseLLM", short_term_threshold: int = 4, summary_prompt: str = "Summarize the following conversation:"):
+        super().__init__(llm=llm)
         self.short_term_memory: List[Dict[str, str]] = []
         self.long_term_memory: str = ""
         self.short_term_threshold = short_term_threshold
         self.summary_prompt = summary_prompt
-        self.llm = ChatOpenAI(api_key=OPENAI_API_KEY)
+        self.llm = llm
 
     def add_message(self, role: str, content: str) -> None:
         """Adds a message to the short-term memory and triggers summarization if the threshold is exceeded."""
@@ -31,7 +26,8 @@ class HierarchicalMemory(BaseMemory):
 
     def _summarize(self) -> None:
         """Summarizes the short-term memory and moves it to long-term memory."""
-        conversation_to_summarize = "\n".join([f"{msg['role']}: {msg['content']}" for msg in self.short_term_memory])
+        messages_to_summarize = self.short_term_memory[:-1] # Summarize all but the last message
+        conversation_to_summarize = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages_to_summarize])
         prompt = f"{self.summary_prompt}\n\n{conversation_to_summarize}"
         summary = self.llm.invoke(prompt).content
         
@@ -40,7 +36,7 @@ class HierarchicalMemory(BaseMemory):
         else:
             self.long_term_memory = summary
             
-        self.short_term_memory = []
+        self.short_term_memory = [self.short_term_memory[-1]] # Keep only the last message
 
     def get_context(self) -> str:
         """Retrieves the combined context from long-term and short-term memory."""

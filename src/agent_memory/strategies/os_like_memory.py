@@ -1,5 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from .base import BaseMemory
+
+if TYPE_CHECKING:
+    from agent_memory.llms.base import BaseLLM
 
 class OSLikeMemory(BaseMemory):
     """
@@ -10,11 +13,13 @@ class OSLikeMemory(BaseMemory):
     When the number of pages exceeds a limit, older pages are 'swapped out' (discarded).
     """
 
-    def __init__(self, page_size: int = 2, max_pages: int = 3):
+    def __init__(self, llm: Optional["BaseLLM"] = None, page_size: int = 2, max_pages: int = 3):
+        super().__init__(llm=llm)
         """
         Initializes the OSLikeMemory.
 
         Args:
+            llm: An optional instance of a class conforming to BaseLLM.
             page_size: The number of messages per 'page'.
             max_pages: The maximum number of active 'pages' to keep in memory.
         """

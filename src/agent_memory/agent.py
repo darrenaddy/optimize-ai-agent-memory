@@ -1,7 +1,7 @@
 from typing import Type
+from .llms.base import BaseLLM
 from .strategies.base import BaseMemory
-from langchain_openai import ChatOpenAI
-from .config import OPENAI_API_KEY
+from .llms import get_llm
 
 class Agent:
     """
@@ -16,8 +16,8 @@ class Agent:
             memory_strategy: The class of the memory strategy to use.
             **kwargs: Additional keyword arguments to pass to the memory strategy's constructor.
         """
-        self.memory = memory_strategy(**kwargs)
-        self.llm = ChatOpenAI(api_key=OPENAI_API_KEY)
+        self.llm = get_llm()
+        self.memory = memory_strategy(llm=self.llm, **kwargs)
 
     def chat(self, user_input: str) -> str:
         """

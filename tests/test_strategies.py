@@ -1,12 +1,24 @@
 import os
 import pytest
+from unittest.mock import MagicMock, patch
 from agent_memory.strategies.sequential import SequentialMemory
 from agent_memory.strategies.sliding_window import SlidingWindowMemory
 from agent_memory.strategies.summarization import SummarizationMemory
 from agent_memory.strategies.retrieval import RetrievalMemory
+from agent_memory.strategies.memory_augmented_transformer import MemoryAugmentedTransformerMemory
 from agent_memory.strategies.hierarchical import HierarchicalMemory
+from agent_memory.strategies.compression_consolidation import CompressionConsolidationMemory
 from agent_memory.strategies.graph_based import GraphBasedMemory
 from agent_memory.strategies.os_like_memory import OSLikeMemory
+from agent_memory.llms.base import BaseLLM
+
+@pytest.fixture(autouse=True)
+def mock_llm_for_strategies(monkeypatch):
+    mock_llm = MagicMock(spec=BaseLLM)
+    mock_llm.invoke.return_value.content = "Mocked LLM response for summarization/compression"
+    monkeypatch.setattr("agent_memory.strategies.retrieval.OpenAIEmbeddings", MagicMock)
+    monkeypatch.setattr("agent_memory.llms.get_llm", lambda: mock_llm)
+    return mock_llm
 
 
 def test_sequential_memory():
@@ -32,18 +44,26 @@ def test_sliding_window_memory():
     assert memory.get_context() == ""
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_retrieval_memory():
-    memory = RetrievalMemory()
-    memory.add_message(role="user", content="What is the capital of France?")
-    memory.add_message(role="assistant", content="The capital of France is Paris.")
-    context = memory.get_context("What is the capital of France?")
-    assert "Paris" in context
-    memory.clear()
-    assert memory.get_context("irrelevant query") == ""
+def test_retrieval_memory(monkeypatch):
+    mock_embeddings = MagicMock()
+    mock_embeddings.embed_documents.side_effect = lambda texts: [[0.1, 0.2, 0.3]] * len(texts)
+    mock_embeddings.embed_query.return_value = [0.1, 0.2, 0.3] # Mock embedding for query
+    monkeypatch.setattr("agent_memory.strategies.retrieval.OpenAIEmbeddings", lambda **kwargs: mock_embeddings)
+
+    with patch('langchain_community.vectorstores.faiss.FAISS.from_texts') as mock_faiss_from_texts:
+        mock_instance = MagicMock()
+        mock_instance.similarity_search.return_value = [MagicMock(page_content="Paris")]
+        mock_faiss_from_texts.return_value = mock_instance
+
+        memory = RetrievalMemory()
+        memory.add_message(role="user", content="What is the capital of France?")
+        memory.add_message(role="assistant", content="The capital of France is Paris.")
+        context = memory.get_context(query="What is the capital of France?")
+        assert "Paris" in context
+        memory.clear()
+        assert memory.get_context("irrelevant query") == ""
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
 def test_memory_augmented_transformer_memory():
     memory = MemoryAugmentedTransformerMemory()
     memory.add_message(role="user", content="Hello, world!")
@@ -55,9 +75,8 @@ def test_memory_augmented_transformer_memory():
 # This test requires an OpenAI API key to be set in the environment.
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_hierarchical_memory():
-    memory = HierarchicalMemory(short_term_threshold=2)
+def test_hierarchical_memory(mock_llm_for_strategies):
+    memory = HierarchicalMemory(llm=mock_llm_for_strategies, short_term_threshold=2)
     memory.add_message(role="user", content="Message 1")
     memory.add_message(role="assistant", content="Message 2")
     memory.add_message(role="user", content="Message 3") # This should trigger summarization
@@ -79,9 +98,8 @@ def test_graph_based_memory():
     assert memory.get_context() == ""
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_compression_consolidation_memory():
-    memory = CompressionConsolidationMemory(compression_threshold=2)
+def test_compression_consolidation_memory(mock_llm_for_strategies):
+    memory = CompressionConsolidationMemory(llm=mock_llm_for_strategies, compression_threshold=2)
     memory.add_message(role="user", content="First message.")
     memory.add_message(role="assistant", content="Second message.") # This should trigger compression
     assert len(memory.history) == 0 # History should be cleared after compression
@@ -114,12 +132,11 @@ def test_os_like_memory():
     assert memory.get_context() == ""
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
-def test_summarization_memory():
-    memory = SummarizationMemory()
+def test_summarization_memory(mock_llm_for_strategies):
+    memory = SummarizationMemory(llm=mock_llm_for_strategies)
     memory.add_message(role="user", content="What is the capital of France?")
     memory.add_message(role="assistant", content="The capital of France is Paris.")
     context = memory.get_context()
-    assert "paris" in context.lower()
+    assert "Mocked LLM response for summarization/compression" in context
     memory.clear()
     assert memory.get_context() == ""

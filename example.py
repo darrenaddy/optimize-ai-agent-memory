@@ -11,11 +11,15 @@ from agent_memory.strategies.graph_based import GraphBasedMemory
 from agent_memory.strategies.compression_consolidation import CompressionConsolidationMemory
 from agent_memory.strategies.os_like_memory import OSLikeMemory
 
+from agent_memory.config import LLM_PROVIDER
+from agent_memory.llms import get_llm
+
 # Load environment variables
 load_dotenv()
 
 def run_agent_conversation(memory_strategy_class, strategy_name, **kwargs):
-    print(f"\n--- Running Agent with {strategy_name} ---")
+    print(f"\n--- Running Agent with {strategy_name} using {LLM_PROVIDER.upper()} LLM ---")
+    
     agent = Agent(memory_strategy=memory_strategy_class, **kwargs)
 
     try:
@@ -49,16 +53,11 @@ def run_agent_conversation(memory_strategy_class, strategy_name, **kwargs):
         print(f"--- {strategy_name} Cleared ---")
 
 if __name__ == "__main__":
-    # Ensure OPENAI_API_KEY is set for strategies that require it
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Warning: OPENAI_API_KEY not set. Some memory strategies will not function correctly.")
-        print("Please set it in your .env file or environment variables.")
-
     # Run examples for each memory strategy
     run_agent_conversation(SequentialMemory, "SequentialMemory")
     run_agent_conversation(SlidingWindowMemory, "SlidingWindowMemory", window_size=3)
     run_agent_conversation(SummarizationMemory, "SummarizationMemory")
-    run_agent_conversation(RetrievalMemory, "RetrievalMemory")
+    run_agent_conversation(RetrievalMemory, "RetrievalMemory") # RetrievalMemory still uses OpenAIEmbeddings directly
     run_agent_conversation(MemoryAugmentedTransformerMemory, "MemoryAugmentedTransformerMemory")
     run_agent_conversation(HierarchicalMemory, "HierarchicalMemory", short_term_threshold=2)
     run_agent_conversation(GraphBasedMemory, "GraphBasedMemory")

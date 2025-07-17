@@ -1,6 +1,9 @@
-from typing import List, Dict
+from typing import List, Dict, Optional, TYPE_CHECKING
 import networkx as nx
 from .base import BaseMemory
+
+if TYPE_CHECKING:
+    from agent_memory.llms.base import BaseLLM
 
 class GraphBasedMemory(BaseMemory):
     """
@@ -8,7 +11,8 @@ class GraphBasedMemory(BaseMemory):
     This allows for more complex retrieval and reasoning.
     """
 
-    def __init__(self):
+    def __init__(self, llm: Optional["BaseLLM"] = None):
+        super().__init__(llm=llm)
         self.graph = nx.DiGraph()
         self.message_count = 0
 
