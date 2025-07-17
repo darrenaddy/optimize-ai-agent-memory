@@ -48,7 +48,45 @@ The agent will use the LLM configured in your `.env` file.
 
 **Note:** Some memory strategies (Summarization, Retrieval, Hierarchical, Compression & Consolidation) require an active LLM connection to function correctly. If the LLM is not properly configured or accessible, these examples may not produce meaningful output.
 
+## To run a different LLM (that is supported by LangChain, such as Qwen or DeepSeek):
+
+To integrate a new LLM supported by LangChain, follow these steps:
+
+1.  **Install New Dependencies:**
+    *   You'll likely need to install the specific LangChain integration package for that model. This might be part of `langchain-community` or a more specific package (e.g., `langchain-qwen` if one exists).
+    *   Add the new dependency to your `pyproject.toml` file and run `poetry install`.
+
+2.  **Create a New LLM Wrapper:**
+    *   In the `src/agent_memory/llms/` directory, create a new Python file (e.g., `qwen_llm.py` or `deepseek_llm.py`).
+    *   Inside this file, define a new class (e.g., `QwenLLM` or `DeepSeekLLM`) that inherits from `BaseLLM` (your abstract base class).
+    *   Implement the `__init__` method to instantiate the relevant LangChain chat model (e.g., `ChatQwen` or `ChatDeepSeek`) and the `invoke` method to call that model.
+
+3.  **Update `config.py`:**
+    *   Add new environment variables to `src/agent_memory/config.py` for any API keys, base URLs, or specific model names required by the new LLM. For example:
+        ```python
+        QWEN_API_KEY = os.getenv("QWEN_API_KEY")
+        DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+        # ... and potentially model names or base URLs if they differ from defaults
+        ```
+
+4.  **Update `llms/__init__.py`:**
+    *   Import your new LLM wrapper class (e.g., `from .qwen_llm import QwenLLM`).
+    *   Add an `elif` condition in the `get_llm` function to return an instance of your new LLM wrapper when `LLM_PROVIDER` is set to the appropriate value (e.g., `"qwen"` or `"deepseek"`):
+        ```python
+        def get_llm() -> BaseLLM:
+            # ... existing code ...
+            elif LLM_PROVIDER == "qwen":
+                return QwenLLM(api_key=QWEN_API_KEY) # Or whatever parameters it needs
+            elif LLM_PROVIDER == "deepseek":
+                return DeepSeekLLM(api_key=DEEPSEEK_API_KEY) # Or whatever parameters it needs
+            # ... existing code ...
+        ```
+
+5.  **Update `.env.example`:**
+    *   Add the new environment variables to `.env.example` so users know how to configure them.
+
 ### Memory Strategies Implemented:
+
 
 1.  **Sequential Memory:**
     *   **Concept:** This is the most straightforward memory strategy. It involves storing every piece of information (e.g., user inputs, agent responses) in a chronological list. The entire list is then passed as context to the language model for every new turn in the conversation.
